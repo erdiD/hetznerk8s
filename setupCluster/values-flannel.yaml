@@ -1,0 +1,98 @@
+---
+global:
+  imagePullSecrets:
+# - name: "a-secret-name"
+
+# The IPv4 cidr pool to create on startup if none exists. Pod IPs will be
+# chosen from this range.
+podCidr: "10.244.0.0/16" # Put here your podSubnet. Sames ans in InitConfiguration
+podCidrv6: ""
+
+flannel:
+  # kube-flannel image
+  image:
+    repository: ghcr.io/flannel-io/flannel
+    tag: v0.27.0
+  image_cni:
+    repository: ghcr.io/flannel-io/flannel-cni-plugin
+    tag: v1.7.1-flannel1
+  # cniBinDir is the directory to which the flannel CNI binary is installed.
+  cniBinDir: "/opt/cni/bin"
+  # cniConfDir is the directory where the CNI configuration is located.
+  cniConfDir: "/etc/cni/net.d"
+  # skipCNIConfigInstallation skips the installation of the flannel CNI config. This is useful when the CNI config is
+  # provided externally.
+  skipCNIConfigInstallation: false
+  # flannel command arguments
+  enableNFTables: false
+  args:
+  - "--ip-masq"
+  - "--kube-subnet-mgr"
+  # Backend for kube-flannel. Backend should not be changed
+  # at runtime. (vxlan, host-gw, wireguard, udp)
+  # Documentation at https://github.com/flannel-io/flannel/blob/master/Documentation/backends.md
+  backend: "vxlan"
+  # Port used by the backend 0 means default value (VXLAN: 8472, Wireguard: 51821, UDP: 8285)
+  #backendPort: 0
+  # MTU to use for outgoing packets (VXLAN and Wiregurad) if not defined the MTU of the external interface is used.
+  # mtu: 1500
+  #
+  # VXLAN Configs:
+  #
+  # VXLAN Identifier to be used. On Linux default is 1.
+  #vni: 1
+  # Enable VXLAN Group Based Policy (Default false)
+  # GBP: false
+  # Enable direct routes (default is false)
+  # directRouting: false
+  # MAC prefix to be used on Windows. (Defaults is 0E-2A)
+  # macPrefix: "0E-2A"
+  #
+  # Wireguard Configs:
+  #
+  # UDP listen port used with IPv6
+  # backendPortv6: 51821
+  # Pre shared key to use
+  # psk: 0
+  # IP version to use on Wireguard
+  # tunnelMode: "separate"
+  # Persistent keep interval to use
+  # keepaliveInterval: 0
+  #
+  cniConf: |
+    {
+      "name": "cbr0",
+      "cniVersion": "0.3.1",
+      "plugins": [
+        {
+          "type": "flannel",
+          "delegate": {
+            "hairpinMode": true,
+            "isDefaultGateway": true
+          }
+        },
+        {
+          "type": "portmap",
+          "capabilities": {
+            "portMappings": true
+          }
+        }
+      ]
+    }
+  #
+  # General daemonset configs
+  #
+  tolerations:
+  - effect: NoExecute
+    operator: Exists
+  - effect: NoSchedule
+    operator: Exists
+
+netpol:
+  enabled: false
+  args:
+  - "--hostname-override=$(MY_NODE_NAME)"
+  - "--v=2"
+  image:
+    repository: registry.k8s.io/networking/kube-network-policies
+    tag: v0.7.0
