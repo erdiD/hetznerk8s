@@ -24,7 +24,7 @@ apiServer:
   timeoutForControlPlane: 4m0s
   certSANs:
     - dogruel.me
-    - 10.0.1.2
+    - 10.0.1.2 # Private IP from your host
 apiVersion: kubeadm.k8s.io/v1beta3
 certificatesDir: /etc/kubernetes/pki
 clusterName: kubernetes
